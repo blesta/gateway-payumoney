@@ -1,6 +1,7 @@
 <?php
 // Account setup labels
 $lang['Payumoney.name'] = "Payumoney";
+$lang['Payumoney.description'] = "";
 $lang['Payumoney.merchant_key'] = "Merchant Key";
 $lang['Payumoney.merchant_salt'] = "Merchant Salt";
 $lang['Payumoney.auth_header'] = "Authorization Header";
