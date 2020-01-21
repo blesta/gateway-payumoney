@@ -1,6 +1,7 @@
 <?php
 // Account setup labels
 $lang['Payumoney.name'] = "Payumoney";
+$lang['Payumoney.description'] = "In India, PayU serves more than 4,50,000+ merchants with over 100+ payment methods and is the preferred payments partner for nearly 60% of the e-commerce merchants";
 $lang['Payumoney.merchant_key'] = "Merchant Key";
 $lang['Payumoney.merchant_salt'] = "Merchant Salt";
 $lang['Payumoney.auth_header'] = "Authorization Header";
