@@ -186,18 +186,18 @@ class Payumoney extends NonmerchantGateway
 
         //redirection URL
         $redirect_url = Configure::get('Blesta.gw_callback_url') . Configure::get('Blesta.company_id')
-            . '/payumoney/' . $this->ifSet($contact_info['client_id']);
+            . '/payumoney/' . (isset($contact_info['client_id']) ? $contact_info['client_id'] : null);
 
-        $order_id = $this->ifSet($contact_info['client_id']) . '-' . time();
-        $merchant_key = $this->ifSet($this->meta['merchant_key']);
-        $merchant_salt = $this->ifSet($this->meta['merchant_salt']);
+        $order_id = (isset($contact_info['client_id']) ? $contact_info['client_id'] : null) . '-' . time();
+        $merchant_key = (isset($this->meta['merchant_key']) ? $this->meta['merchant_key'] : null);
+        $merchant_salt = (isset($this->meta['merchant_salt']) ? $this->meta['merchant_salt'] : null);
 
         //udf1 : Custom field to pass invoice details
         $udf1 = $this->serializeInvoices($invoice_amounts);
         //udf2 : Custom parameter to pass client id
-        $udf2 = $this->ifSet($contact_info['client_id']);
+        $udf2 = (isset($contact_info['client_id']) ? $contact_info['client_id'] : null);
         $hashSequence = $merchant_key . '|' . $order_id . '|' . $amount . '|' . $options['description'] . '|'
-            . $this->ifSet($contact_info['first_name']) . '|' . $this->ifSet($client->email) . '|' . $udf1 . '|'
+            . (isset($contact_info['first_name']) ? $contact_info['first_name'] : null) . '|' . (isset($client->email) ? $client->email : null) . '|' . $udf1 . '|'
             . $udf2 . '|||||||||';
         $hashSequence .= $merchant_salt;
         $hash = strtolower(hash('sha512', $hashSequence));
@@ -210,16 +210,16 @@ class Payumoney extends NonmerchantGateway
             'surl' => $redirect_url,
             'furl' => $redirect_url,
             'amount' => $amount,
-            'firstname' => $this->ifSet($contact_info['first_name']),
-            'lastname' => $this->ifSet($contact_info['last_name']),
-            'address1' => $this->ifSet($contact_info['address1']),
-            'address2' => $this->ifSet($contact_info['address2']),
-            'city' => $this->ifSet($contact_info['city']),
-            'state' => $this->ifSet($contact_info['state']['name']),
-            'country' => $this->ifSet($contact_info['country']['name']),
-            'zipcode' => $this->ifSet($contact_info['zip']),
-            'email' => $this->ifSet($client->email),
-            'phone' => $this->ifSet($contact[0]->number),
+            'firstname' => (isset($contact_info['first_name']) ? $contact_info['first_name'] : null),
+            'lastname' => (isset($contact_info['last_name']) ? $contact_info['last_name'] : null),
+            'address1' => (isset($contact_info['address1']) ? $contact_info['address1'] : null),
+            'address2' => (isset($contact_info['address2']) ? $contact_info['address2'] : null),
+            'city' => (isset($contact_info['city']) ? $contact_info['city'] : null),
+            'state' => (isset($contact_info['state']['name']) ? $contact_info['state']['name'] : null),
+            'country' => (isset($contact_info['country']['name']) ? $contact_info['country']['name'] : null),
+            'zipcode' => (isset($contact_info['zip']) ? $contact_info['zip'] : null),
+            'email' => (isset($client->email) ? $client->email : null),
+            'phone' => (isset($contact[0]->number) ? $contact[0]->number : null),
             //udf1 : Custom field to pass invoice details
             'udf1' => $udf1,
             //udf2 : Custom parameter to pass client id
@@ -233,7 +233,7 @@ class Payumoney extends NonmerchantGateway
         //Sets sandbox or production URL based on 'test_mode' parameter value.
         $this->view->set(
             'post_to',
-            ($this->ifSet($this->meta['test_mode']) == 'true'
+            ((isset($this->meta['test_mode']) ? $this->meta['test_mode'] : null) == 'true'
                 ? $this->payumoney_test_url
                 : $this->payumoney_url) . '_payment'
         );
@@ -267,7 +267,7 @@ class Payumoney extends NonmerchantGateway
         $rules = [
             'key' => [
                 'valid' => [
-                    'rule' => ['compares', '==', $this->ifSet($this->meta['merchant_key'])],
+                    'rule' => ['compares', '==', (isset($this->meta['merchant_key']) ? $this->meta['merchant_key'] : null)],
                     'message' => Language::_('Payumoney.!error.key.valid', true)
                 ]
             ]
@@ -277,20 +277,20 @@ class Payumoney extends NonmerchantGateway
         $success = $this->Input->validates($post);
 
         // Log the response
-        $this->log($this->ifSet($_SERVER['REQUEST_URI']), serialize($post), 'output', $success);
+        $this->log((isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : null), serialize($post), 'output', $success);
 
         if (!$success) {
             return;
         }
 
         return [
-            'client_id' => $this->ifSet($post['udf2']),
-            'amount' => $this->ifSet($post['amount']),
+            'client_id' => (isset($post['udf2']) ? $post['udf2'] : null),
+            'amount' => (isset($post['amount']) ? $post['amount'] : null),
             'currency' => 'INR',
             //Serialized invoice numbers
-            'invoices' => $this->deserializeInvoices($this->ifSet($post['udf1'])),
-            'status' => ($this->ifSet($post['status']) === 'success' ? 'approved' : 'declined'),
-            'transaction_id' => $this->ifSet($post['payuMoneyId']),
+            'invoices' => $this->deserializeInvoices((isset($post['udf1']) ? $post['udf1'] : null)),
+            'status' => ((isset($post['status']) ? $post['status'] : null) === 'success' ? 'approved' : 'declined'),
+            'transaction_id' => (isset($post['payuMoneyId']) ? $post['payuMoneyId'] : null),
             'parent_transaction_id' => null
         ];
     }
@@ -315,13 +315,13 @@ class Payumoney extends NonmerchantGateway
     public function success(array $get, array $post)
     {
         return [
-            'client_id' => $this->ifSet($post['udf2']),
-            'amount' => $this->ifSet($post['amount']),
+            'client_id' => (isset($post['udf2']) ? $post['udf2'] : null),
+            'amount' => (isset($post['amount']) ? $post['amount'] : null),
             'currency' => 'INR',
             //Serialized invoice numbers
-            'invoices' => $this->deserializeInvoices($this->ifSet($post['udf1'])),
-            'status' => ($this->ifSet($post['status']) === 'success' ? 'approved' : 'declined'),
-            'transaction_id' => $this->ifSet($post['payuMoneyId']),
+            'invoices' => $this->deserializeInvoices((isset($post['udf1']) ? $post['udf1'] : null)),
+            'status' => ((isset($post['status']) ? $post['status'] : null) === 'success' ? 'approved' : 'declined'),
+            'transaction_id' => (isset($post['payuMoneyId']) ? $post['payuMoneyId'] : null),
             'parent_transaction_id' => null
         ];
     }
@@ -342,7 +342,7 @@ class Payumoney extends NonmerchantGateway
      */
     public function refund($reference_id, $transaction_id, $amount, $notes = null)
     {
-        $merchant_key = $this->ifSet($this->meta['merchant_key']);
+        $merchant_key = (isset($this->meta['merchant_key']) ? $this->meta['merchant_key'] : null);
 
         $request = $this->sendApi([
             'merchantKey' => $merchant_key,
@@ -454,7 +454,7 @@ class Payumoney extends NonmerchantGateway
     {
         $url = '';
         $params = http_build_query($params);
-        if ($this->ifSet($this->meta['test_mode']) == 'true') {
+        if ((isset($this->meta['test_mode']) ? $this->meta['test_mode'] : null) == 'true') {
             $url = $this->payumoney_get_test_url . $function . '?' . $params;
         } else {
             $url = $this->payumoney_get_url . $function . '?' . $params;
