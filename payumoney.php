@@ -314,13 +314,18 @@ class Payumoney extends NonmerchantGateway
      */
     public function success(array $get, array $post)
     {
+        $status = ((isset($post['status']) ? $post['status'] : null) === 'success' ? 'approved' : 'declined');
+        if (($errors = $this->Input->errors()) && empty($errors) && $status !== 'approved') {
+            $this->Input->setErrors($this->getCommonError('invalid'));
+        }
+
         return [
             'client_id' => (isset($post['udf2']) ? $post['udf2'] : null),
             'amount' => (isset($post['amount']) ? $post['amount'] : null),
             'currency' => 'INR',
             //Serialized invoice numbers
             'invoices' => $this->deserializeInvoices((isset($post['udf1']) ? $post['udf1'] : null)),
-            'status' => ((isset($post['status']) ? $post['status'] : null) === 'success' ? 'approved' : 'declined'),
+            'status' => $status,
             'transaction_id' => (isset($post['payuMoneyId']) ? $post['payuMoneyId'] : null),
             'parent_transaction_id' => null
         ];
