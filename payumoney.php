@@ -264,10 +264,10 @@ class Payumoney extends NonmerchantGateway
     public function validate(array $get, array $post)
     {
         // Validate the response is as expected
-        $hash_string = ($post['key'] ?? null) . '|' . ($post['txnid'] ?? null) . '|' . ($post['amount'] ?? null)
-            . '|' . ($post['productinfo'] ?? null) . '|' . ($post['firstname'] ?? null) . '|' . ($post['email'] ?? null)
-            . '|' . ($post['udf1'] ?? null) . '|' . ($post['udf2'] ?? null) . '|||||||||'
-            . $this->meta['merchant_salt'];
+        $hash_string = $this->meta['merchant_salt'] . '|||||||||' . ($post['udf2'] ?? null)
+            . '|' . ($post['udf1'] ?? null) . '|' . ($post['email'] ?? null) . '|' . ($post['firstname'] ?? null)
+            . '|' . ($post['productinfo'] ?? null) . '|' . ($post['amount'] ?? null) . '|' . ($post['txnid'] ?? null)
+            . '|' . ($post['key'] ?? null);
         $rules = [
             'key' => [
                 'valid' => [
