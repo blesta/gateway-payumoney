@@ -207,8 +207,8 @@ class Payumoney extends NonmerchantGateway
             'service_provider' => 'payu_paisa',
             'productinfo' => $options['description'],
             'txnid' => $order_id,
-            'surl' => $redirect_url,
-            'furl' => $redirect_url,
+            'surl' => (isset($options['return_url']) ? $options['return_url'] : null),
+            'furl' => (isset($options['return_url']) ? $options['return_url'] : null),
             'amount' => $amount,
             'firstname' => (isset($contact_info['first_name']) ? $contact_info['first_name'] : null),
             'lastname' => (isset($contact_info['last_name']) ? $contact_info['last_name'] : null),
@@ -264,11 +264,21 @@ class Payumoney extends NonmerchantGateway
     public function validate(array $get, array $post)
     {
         // Validate the response is as expected
+        $hash_string = ($post['key'] ?? null) . '|' . ($post['txnid'] ?? null) . '|' . ($post['amount'] ?? null)
+            . '|' . ($post['productinfo'] ?? null) . '|' . ($post['firstname'] ?? null) . '|' . ($post['email'] ?? null)
+            . '|' . ($post['udf1'] ?? null) . '|' . ($post['udf2'] ?? null) . '|||||||||'
+            . $this->meta['merchant_salt'];
         $rules = [
             'key' => [
                 'valid' => [
                     'rule' => ['compares', '==', (isset($this->meta['merchant_key']) ? $this->meta['merchant_key'] : null)],
                     'message' => Language::_('Payumoney.!error.key.valid', true)
+                ]
+            ],
+            'hash' => [
+                'valid' => [
+                    'rule' => ['compares', '==', strtolower(hash('sha512', $hash_string))],
+                    'message' => Language::_('Payumoney.!error.hash.valid', true)
                 ]
             ]
         ];
@@ -277,7 +287,12 @@ class Payumoney extends NonmerchantGateway
         $success = $this->Input->validates($post);
 
         // Log the response
-        $this->log((isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : null), serialize($post), 'output', $success);
+        $this->log(
+            (isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : null),
+            serialize($post),
+            'output',
+            $success
+        );
 
         if (!$success) {
             return;
@@ -290,7 +305,7 @@ class Payumoney extends NonmerchantGateway
             //Serialized invoice numbers
             'invoices' => $this->deserializeInvoices((isset($post['udf1']) ? $post['udf1'] : null)),
             'status' => ((isset($post['status']) ? $post['status'] : null) === 'success' ? 'approved' : 'declined'),
-            'transaction_id' => (isset($post['payuMoneyId']) ? $post['payuMoneyId'] : null),
+            'transaction_id' => (isset($post['txnid']) ? $post['txnid'] : null),
             'parent_transaction_id' => null
         ];
     }
@@ -326,7 +341,7 @@ class Payumoney extends NonmerchantGateway
             //Serialized invoice numbers
             'invoices' => $this->deserializeInvoices((isset($post['udf1']) ? $post['udf1'] : null)),
             'status' => $status,
-            'transaction_id' => (isset($post['payuMoneyId']) ? $post['payuMoneyId'] : null),
+            'transaction_id' => (isset($post['txnid']) ? $post['txnid'] : null),
             'parent_transaction_id' => null
         ];
     }
