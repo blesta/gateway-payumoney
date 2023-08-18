@@ -204,7 +204,7 @@ class Payumoney extends NonmerchantGateway
         // Filling the request parameters
         $fields = [
             'key' => $merchant_key,
-            'service_provider' => 'payu_paisa',
+//            'service_provider' => 'payu_paisa',
             'productinfo' => $options['description'],
             'txnid' => $order_id,
             'surl' => (isset($options['return_url']) ? $options['return_url'] : null),
@@ -263,13 +263,16 @@ class Payumoney extends NonmerchantGateway
      */
     public function validate(array $get, array $post)
     {
-        $payload = json_decode(file_get_contents('php://input'), true);
-        if (!$payload) {
-            return;
+        $payload = $post;
+        if (empty($payload)) {
+            $payload = json_decode(file_get_contents('php://input'), true);
+            if (!$payload) {
+                return;
+            }
         }
-        
+
         // Validate the response is as expected
-        $hash_string = $this->meta['merchant_salt'] . '|||||||||' . ($payload['udf2'] ?? null)
+        $hash_string = $this->meta['merchant_salt'] . '|' . $payload['status'] . '|||||||||' . ($payload['udf2'] ?? null)
             . '|' . ($payload['udf1'] ?? null) . '|' . ($payload['email'] ?? null) . '|' . ($payload['firstname'] ?? null)
             . '|' . ($payload['productinfo'] ?? null) . '|' . ($payload['amount'] ?? null) . '|' . ($payload['txnid'] ?? null)
             . '|' . ($payload['key'] ?? null);
@@ -290,7 +293,6 @@ class Payumoney extends NonmerchantGateway
 
         $this->Input->setRules($rules);
         $success = $this->Input->validates($payload);
-        var_dump($this->Input->errors());
 
         // Log the response
         $this->log(
