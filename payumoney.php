@@ -204,7 +204,6 @@ class Payumoney extends NonmerchantGateway
         // Filling the request parameters
         $fields = [
             'key' => $merchant_key,
-//            'service_provider' => 'payu_paisa',
             'productinfo' => $options['description'],
             'txnid' => $order_id,
             'surl' => (isset($options['return_url']) ? $options['return_url'] : null),
