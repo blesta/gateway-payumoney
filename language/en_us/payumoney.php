@@ -17,6 +17,7 @@ $lang['Payumoney.!error.merchant_key.valid'] = "Please enter a valid merchant ke
 $lang['Payumoney.!error.merchant_salt.valid'] = "Please enter a valid Salt.";
 $lang['Payumoney.!error.auth_header.valid'] = "Please enter a valid authorization header.";
 $lang['Payumoney.!error.key.valid'] = "Invalid merchant key.";
+$lang['Payumoney.!error.hash.valid'] = "Invalid hash.";
 
 $lang['Payumoney.!error.invalid_token.response'] = "Payumoney responded with an invalid token.";
 ?>

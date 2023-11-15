@@ -204,11 +204,10 @@ class Payumoney extends NonmerchantGateway
         // Filling the request parameters
         $fields = [
             'key' => $merchant_key,
-            'service_provider' => 'payu_paisa',
             'productinfo' => $options['description'],
             'txnid' => $order_id,
-            'surl' => $redirect_url,
-            'furl' => $redirect_url,
+            'surl' => (isset($options['return_url']) ? $options['return_url'] : null),
+            'furl' => (isset($options['return_url']) ? $options['return_url'] : null),
             'amount' => $amount,
             'firstname' => (isset($contact_info['first_name']) ? $contact_info['first_name'] : null),
             'lastname' => (isset($contact_info['last_name']) ? $contact_info['last_name'] : null),
@@ -263,34 +262,57 @@ class Payumoney extends NonmerchantGateway
      */
     public function validate(array $get, array $post)
     {
+        $payload = $post;
+        if (empty($payload)) {
+            $payload = json_decode(file_get_contents('php://input'), true);
+            if (!$payload) {
+                return;
+            }
+        }
+
         // Validate the response is as expected
+        $hash_string = $this->meta['merchant_salt'] . '|' . $payload['status'] . '|||||||||' . ($payload['udf2'] ?? null)
+            . '|' . ($payload['udf1'] ?? null) . '|' . ($payload['email'] ?? null) . '|' . ($payload['firstname'] ?? null)
+            . '|' . ($payload['productinfo'] ?? null) . '|' . ($payload['amount'] ?? null) . '|' . ($payload['txnid'] ?? null)
+            . '|' . ($payload['key'] ?? null);
         $rules = [
             'key' => [
                 'valid' => [
                     'rule' => ['compares', '==', (isset($this->meta['merchant_key']) ? $this->meta['merchant_key'] : null)],
                     'message' => Language::_('Payumoney.!error.key.valid', true)
                 ]
+            ],
+            'hash' => [
+                'valid' => [
+                    'rule' => ['compares', '==', strtolower(hash('sha512', $hash_string))],
+                    'message' => Language::_('Payumoney.!error.hash.valid', true)
+                ]
             ]
         ];
 
         $this->Input->setRules($rules);
-        $success = $this->Input->validates($post);
+        $success = $this->Input->validates($payload);
 
         // Log the response
-        $this->log((isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : null), serialize($post), 'output', $success);
+        $this->log(
+            (isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : null),
+            json_encode($payload),
+            'output',
+            $success
+        );
 
         if (!$success) {
             return;
         }
 
         return [
-            'client_id' => (isset($post['udf2']) ? $post['udf2'] : null),
-            'amount' => (isset($post['amount']) ? $post['amount'] : null),
+            'client_id' => (isset($payload['udf2']) ? $payload['udf2'] : null),
+            'amount' => (isset($payload['amount']) ? $payload['amount'] : null),
             'currency' => 'INR',
             //Serialized invoice numbers
-            'invoices' => $this->deserializeInvoices((isset($post['udf1']) ? $post['udf1'] : null)),
-            'status' => ((isset($post['status']) ? $post['status'] : null) === 'success' ? 'approved' : 'declined'),
-            'transaction_id' => (isset($post['payuMoneyId']) ? $post['payuMoneyId'] : null),
+            'invoices' => $this->deserializeInvoices((isset($payload['udf1']) ? $payload['udf1'] : null)),
+            'status' => ((isset($payload['status']) ? $payload['status'] : null) === 'success' ? 'approved' : 'declined'),
+            'transaction_id' => (isset($payload['txnid']) ? $payload['txnid'] : null),
             'parent_transaction_id' => null
         ];
     }
@@ -326,7 +348,7 @@ class Payumoney extends NonmerchantGateway
             //Serialized invoice numbers
             'invoices' => $this->deserializeInvoices((isset($post['udf1']) ? $post['udf1'] : null)),
             'status' => $status,
-            'transaction_id' => (isset($post['payuMoneyId']) ? $post['payuMoneyId'] : null),
+            'transaction_id' => (isset($post['txnid']) ? $post['txnid'] : null),
             'parent_transaction_id' => null
         ];
     }
