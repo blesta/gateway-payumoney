@@ -1,5 +1,5 @@
 {
-    "version": "3.0.0",
+    "version": "3.0.1",
     "name": "Payumoney.name",
     "description": "Payumoney.description",
     "authors": [
@@ -11,5 +11,9 @@
     "currencies": [
         "INR"
     ],
-    "signup_url": "https://onboarding.payumoney.com/app/account"
+    "signup_url": "https://onboarding.payumoney.com/app/account",
+    "logo": {
+        "light": "views/default/images/logo.svg",
+        "dark": "views/default/images/logo-dark.svg"
+    }
 }
