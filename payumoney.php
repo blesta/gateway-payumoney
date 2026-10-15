@@ -270,6 +270,14 @@ class Payumoney extends NonmerchantGateway
             }
         }
 
+        // Only plain values can be compared or hashed
+        $fields = ['key', 'hash', 'status', 'udf2', 'udf1', 'email', 'firstname', 'productinfo', 'amount', 'txnid'];
+        foreach ($fields as $field) {
+            if (isset($payload[$field]) && !is_scalar($payload[$field])) {
+                return;
+            }
+        }
+
         // Validate the response is as expected
         $hash_string = $this->meta['merchant_salt'] . '|' . $payload['status'] . '|||||||||' . ($payload['udf2'] ?? null)
             . '|' . ($payload['udf1'] ?? null) . '|' . ($payload['email'] ?? null) . '|' . ($payload['firstname'] ?? null)
@@ -278,13 +286,13 @@ class Payumoney extends NonmerchantGateway
         $rules = [
             'key' => [
                 'valid' => [
-                    'rule' => ['compares', '==', (isset($this->meta['merchant_key']) ? $this->meta['merchant_key'] : null)],
+                    'rule' => [[$this, 'matches'], (string) ($this->meta['merchant_key'] ?? '')],
                     'message' => Language::_('Payumoney.!error.key.valid', true)
                 ]
             ],
             'hash' => [
                 'valid' => [
-                    'rule' => ['compares', '==', strtolower(hash('sha512', $hash_string))],
+                    'rule' => [[$this, 'matches'], strtolower(hash('sha512', $hash_string))],
                     'message' => Language::_('Payumoney.!error.hash.valid', true)
                 ]
             ]
@@ -315,6 +323,18 @@ class Payumoney extends NonmerchantGateway
             'transaction_id' => (isset($payload['txnid']) ? $payload['txnid'] : null),
             'parent_transaction_id' => null
         ];
+    }
+
+    /**
+     * Checks that a value is a string matching the expected value exactly
+     *
+     * @param mixed $value The value given
+     * @param string $expected The expected value
+     * @return bool True if the value matches, false otherwise
+     */
+    public function matches($value, $expected)
+    {
+        return is_string($value) && $expected !== '' && hash_equals($expected, $value);
     }
 
     /**
